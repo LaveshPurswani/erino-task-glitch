@@ -414,3 +414,70 @@ No more double dialogs, flickers, or UI confusion.
 
 This completes **FIX #4**.
 
+
+# ✅ FIX #5 — ROI Calculation & Data Validation Bug
+
+## 🐞 Bug Description
+The ROI and analytics pipeline was breaking due to malformed or invalid task data entering the system.
+
+### Problems Identified
+- ROI showing **NaN**, **Infinity**, or blank values.
+- Division by zero when `timeTaken = 0`.
+- Invalid numeric values such as `undefined`, `NaN`, negative time.
+- Extremely large revenue values breaking chart scaling.
+- Injected malformed tasks appearing **after normalization**, still reaching charts.
+- Charts & analytics failing even if corrupted tasks weren’t visible in the table.
+
+### Additional Bug Discovered During Testing
+Even when the UI didn’t show corrupted tasks (because of filtering), **charts still received them**, causing:
+- Crashes  
+- Missing datasets  
+- ROI averages showing NaN  
+- Broken graph bars and axes  
+
+## 🔍 Root Cause Analysis
+
+### 1. `computeROI()` was unsafe  
+Allowed:
+- Division by zero  
+- NaN/Infinity results  
+- Invalid revenue/time propagation  
+
+### 2. Malformed tasks were injected *after normalization*
+Example of injected corrupted task:
+
+```
+{
+  id: undefined,
+  title: "",
+  revenue: NaN,
+  timeTaken: 0,
+  priority: "High",
+  status: "Todo"
+}
+```
+
+### 3. Charts cannot handle corrupted or extreme values
+One malformed task was enough to break:
+- Funnels  
+- Velocity metrics  
+- Cohort charts  
+- Forecasting  
+- Throughput graphs  
+
+## 🛠️ Fix Implemented
+
+### ✔ 1. Safe ROI Calculation
+- Validates revenue & time  
+- Rejects division by zero  
+- Rejects negative/invalid values  
+- Always returns a safe value (0 by default)
+
+### ✔ 2. Normalization strengthened (first-pass filtering)
+Raw JSON is cleaned *before* mapping.
+
+### ✔ 3. Second-pass filtering after injection
+Ensures injected malformed tasks are removed.
+
+### ✔ 4. Final dataset guaranteed safe
+All tasks reaching UI and analytics are validated.

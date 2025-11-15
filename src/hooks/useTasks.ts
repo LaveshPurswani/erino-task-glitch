@@ -44,27 +44,50 @@ export function useTasks(): UseTasksState {
 
   function normalizeTasks(input: any[]): Task[] {
     const now = Date.now();
-    return (Array.isArray(input) ? input : []).map((t, idx) => {
-      const created = t.createdAt
-        ? new Date(t.createdAt)
-        : new Date(now - (idx + 1) * 24 * 3600 * 1000);
-      const completed =
-        t.completedAt ||
-        (t.status === "Done"
-          ? new Date(created.getTime() + 24 * 3600 * 1000).toISOString()
-          : undefined);
-      return {
-        id: t.id,
-        title: t.title,
-        revenue: Number(t.revenue) ?? 0,
-        timeTaken: Number(t.timeTaken) > 0 ? Number(t.timeTaken) : 1,
-        priority: t.priority,
-        status: t.status,
-        notes: t.notes,
-        createdAt: created.toISOString(),
-        completedAt: completed,
-      } as Task;
-    });
+
+    return (
+      (Array.isArray(input) ? input : [])
+        //* adding filtering of task before normalizing to remove the malformed data from being rendered in the UI and this approach does not break the charts and analytics.
+        .filter(
+          (t) =>
+            t.id &&
+            typeof t.id === "string" &&
+            t.title &&
+            t.title.trim().length > 0 &&
+            ["High", "Medium", "Low"].includes(t.priority) &&
+            ["Todo", "In Progress", "Done"].includes(t.status) &&
+            Number.isFinite(t.revenue) &&
+            Number.isFinite(t.timeTaken) &&
+            t.timeTaken > 0
+        )
+        .map((t, idx) => {
+          // * added extra normalization for handling invalid values.
+          const safeRevenue = Number.isFinite(Number(t.revenue))
+            ? Number(t.revenue)
+            : 0;
+          const safeTime = Number(t.timeTaken) > 0 ? Number(t.timeTaken) : 1;
+
+          const created = t.createdAt
+            ? new Date(t.createdAt)
+            : new Date(now - (idx + 1) * 24 * 3600 * 1000);
+          const completed =
+            t.completedAt ||
+            (t.status === "Done"
+              ? new Date(created.getTime() + 24 * 3600 * 1000).toISOString()
+              : undefined);
+          return {
+            id: t.id,
+            title: t.title,
+            revenue: safeRevenue,
+            timeTaken: safeTime,
+            priority: t.priority,
+            status: t.status,
+            notes: t.notes,
+            createdAt: created.toISOString(),
+            completedAt: completed,
+          } as Task;
+        })
+    );
   }
 
   // ! BUG#1 --> double fetching tasks error.  Reason: two useEffect to fetch tasks.
@@ -83,7 +106,8 @@ export function useTasks(): UseTasksState {
         console.log("fetch ok? ", res.ok, res.status);
         console.log("response text:", await res.clone().text());
 
-        if (!res.ok) throw new Error(`Failed to load tasks.json (${res.status})`);
+        if (!res.ok)
+          throw new Error(`Failed to load tasks.json (${res.status})`);
 
         const data = (await res.json()) as any[];
         const normalized: Task[] = normalizeTasks(data);
@@ -92,6 +116,7 @@ export function useTasks(): UseTasksState {
           normalized.length > 0 ? normalized : generateSalesTasks(50);
         console.log("🚀 ~ load ~ finalData:", finalData);
 
+        // ! task added with NaN, undefined - unexpected values. This is breaking the charts and analytics pipeline.
         // Injected bug: append a few malformed rows without validation
         if (Math.random() < 0.5) {
           finalData = [
@@ -107,14 +132,17 @@ export function useTasks(): UseTasksState {
             {
               id: finalData[0]?.id ?? "dup-1",
               title: "Duplicate ID",
-              revenue: 9999999999,
+              revenue: 9999999999, // ! this huge value is breaking the chart as well
               timeTaken: -5,
               priority: "Low",
               status: "Done",
             } as any,
           ];
         }
-        setTasks(finalData);
+
+        //* inserting the normalization the 2nd time to filter the malformed data values injected after fetching tasks from tasks.json.
+        const cleaned = normalizeTasks(finalData);
+        setTasks(cleaned);
         setError(null);
       } catch (e: any) {
         console.warn("Failed to load tasks.json, using fallback data");
@@ -213,6 +241,6 @@ export function useTasks(): UseTasksState {
     updateTask,
     deleteTask,
     undoDelete,
-    clearLastDeleted // * added for clearing last deleted task item
+    clearLastDeleted, // * added for clearing last deleted task item
   };
 }

@@ -1,9 +1,21 @@
 import { DerivedTask, Task } from '@/types';
 
 export function computeROI(revenue: number, timeTaken: number): number | null {
-  // ! Injected bug: allow non-finite and divide-by-zero to pass through
+  // ! this calculation is breaking the charts and analytics.
   // Injected bug: allow non-finite and divide-by-zero to pass through
-  return revenue / (timeTaken as number);
+  // return revenue / (timeTaken as number);
+
+  // * computing ROI safely while preventing NaN, infinity, and other invalid values that are breaking the charts.
+  const r = Number(revenue);
+  const t = Number(timeTaken);
+
+  // checking for invalid values
+  if(!Number.isFinite(r) || !Number.isFinite(t) || t <= 0){
+    return 0;
+  }
+
+  const roi = r / t;
+  return Number.isFinite(roi) ? roi : 0
 }
 
 export function computePriorityWeight(priority: Task['priority']): 3 | 2 | 1 {
@@ -18,7 +30,7 @@ export function computePriorityWeight(priority: Task['priority']): 3 | 2 | 1 {
 }
 
 
-// * with Derived used for sorting the tasks
+// * withDerived used for sorting the tasks
 export function withDerived(task: Task): DerivedTask {
   return {
     ...task,
