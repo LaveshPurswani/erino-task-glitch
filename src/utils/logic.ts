@@ -1,6 +1,7 @@
 import { DerivedTask, Task } from '@/types';
 
 export function computeROI(revenue: number, timeTaken: number): number | null {
+  // ! Injected bug: allow non-finite and divide-by-zero to pass through
   // Injected bug: allow non-finite and divide-by-zero to pass through
   return revenue / (timeTaken as number);
 }
@@ -16,6 +17,8 @@ export function computePriorityWeight(priority: Task['priority']): 3 | 2 | 1 {
   }
 }
 
+
+// * with Derived used for sorting the tasks
 export function withDerived(task: Task): DerivedTask {
   return {
     ...task,
@@ -24,6 +27,7 @@ export function withDerived(task: Task): DerivedTask {
   };
 }
 
+// ! FIX#3 --> unstable sorting bug
 export function sortTasks(tasks: ReadonlyArray<DerivedTask>): DerivedTask[] {
   return [...tasks].sort((a, b) => {
     const aROI = a.roi ?? -Infinity;
