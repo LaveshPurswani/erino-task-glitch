@@ -9,7 +9,7 @@ This document explains the complete debugging journey for **Bug fixes**, includi
 
 ---
 
-# Fix #1 – Double Fetch Bug: Full Summary
+# Fix #1 – Double Fetch Bug
 When the application loads, the tasks API fetching was running twice due to the React StrictMode where effects are run twice.
 
 ## 🚨 Original Bug – Double Fetch on Page Load
@@ -143,3 +143,95 @@ The fetch flow now becomes stable and reliable, not fetching twice and no data d
 ---
 
 
+# FIX #2 – Undo Snackbar Bug
+
+## 🐞 Bug Description
+When a task was deleted, the Snackbar appeared with an Undo option.  
+However, **two major issues occurred**:
+1. **Undo only worked sometimes**.
+2. When the Snackbar auto‑closed or was manually closed,  
+   the `lastDeleted` state was **not cleared**, so clicking Undo later restored **old deleted tasks** (phantom restoration).
+
+This caused unpredictable UI behavior and duplicated/phantom tasks.
+
+---
+
+## 🎯 Expected Behavior
+- Undo should only restore the **most recently deleted task during the active Snackbar window**.
+- Once the Snackbar closes (auto or manual):
+  - `lastDeleted` must be reset
+  - Undo should do nothing  
+- No phantom tasks should reappear.
+
+---
+
+## 🔍 Root Causes
+### 1. **Snackbar onClose was not resetting `lastDeleted`**
+`onClose` fired, but no logic existed to clear the deleted task.
+
+### 2. **Undo worked even after Snackbar disappeared**
+Because `lastDeleted` still had the previous task stored.
+
+### 3. **Auto‑hide was broken**
+Snackbar was using an extremely low `autoHideDuration` that prevented proper lifecycle behavior.
+
+---
+
+## 🛠 Fixes Implemented
+
+### ✅ 1. I Added `clearLastDeleted()` function in `useTasks()`
+```ts
+const clearLastDeleted = useCallback(() => {
+  setLastDeleted(null);
+}, []);
+```
+
+### ✅ 2. I Exposed `clearLastDeleted` through `TasksContext`
+```ts
+clearLastDeleted: () => void;
+```
+
+### ✅ 3. The App.tsx file now clears last deleted task when Snackbar closes
+```ts
+const handleCloseUndo = () => {
+  clearLastDeleted();
+};
+```
+
+### ✅ 4. Snackbar updated with correct auto-hide duration
+```tsx
+autoHideDuration={4000}
+```
+
+### ✅ 5. Undo button restores only the latest deleted task
+```ts
+const undoDelete = useCallback(() => {
+  if (!lastDeleted) return;
+  setTasks(prev => [...prev, lastDeleted]);
+  setLastDeleted(null);
+}, [lastDeleted]);
+```
+
+---
+
+## 🧪 Additional bugs identified me
+During testing, the following issues were found:
+
+### 🟡 Snackbar was not closing  
+Cause: incorrect/too short auto-hide duration.
+
+### 🟡 Undo was causing duplicate tasks  
+Cause: Undo firing even after the snackbar was closed, because `lastDeleted` was not cleared.
+
+Both were resolved by the fixes above.
+
+---
+
+## ✔ Final Working Behavior
+- Snackbar auto‑hides correctly.
+- Undo works reliably during snackbar visibility.
+- Closing Snackbar instantly clears undo state.
+- No phantom tasks reappear.
+- No duplicated tasks appear after undo.
+
+---

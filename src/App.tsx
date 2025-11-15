@@ -19,12 +19,24 @@ import {
 } from '@/utils/logic';
 
 function AppContent() {
-  const { loading, error, metrics, derivedSorted, addTask, updateTask, deleteTask, undoDelete, lastDeleted } = useTasksContext();
-  const handleCloseUndo = () => {}; // * snackbar close undo.
+  const {
+    loading,
+    error,
+    metrics,
+    derivedSorted,
+    addTask,
+    updateTask,
+    deleteTask,
+    undoDelete,
+    lastDeleted,
+    clearLastDeleted
+  } = useTasksContext();
+  // const handleCloseUndo = () => {}; // * snackbar close undo.
   const [q, setQ] = useState('');
   const [fStatus, setFStatus] = useState<string>('All');
   const [fPriority, setFPriority] = useState<string>('All');
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+
   const { user } = useUser();
   const createActivity = useCallback((type: ActivityItem['type'], summary: string): ActivityItem => ({
     id: (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`),
@@ -55,12 +67,16 @@ function AppContent() {
     deleteTask(id);
     setActivity(prev => [createActivity('delete', `Deleted task ${id}`), ...prev].slice(0, 50));
   }, [deleteTask, createActivity]);
-  
+
   // ! FIX#2 --> check for undo snackbar bug
   const handleUndo = useCallback(() => {
     undoDelete();
     setActivity(prev => [createActivity('undo', 'Undo delete'), ...prev].slice(0, 50));
   }, [undoDelete, createActivity]);
+
+  const handleCloseUndo = () => {
+    clearLastDeleted();
+  }
 
   return (
     <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default' }}>
@@ -131,7 +147,7 @@ function AppContent() {
           {!loading && !error && <AnalyticsDashboard tasks={filtered} />}
           {!loading && !error && <ActivityLog items={activity} />}
           <UndoSnackbar open={!!lastDeleted} onClose={handleCloseUndo} onUndo={handleUndo} />
-         </Stack>
+        </Stack>
       </Container>
     </Box>
   );
