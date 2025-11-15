@@ -1,4 +1,12 @@
+## 🚀 Live Demo
 
+The application is deployed on Vercel:
+
+👉 **https://loveshpurswani-taskglitch.vercel.app/**
+
+Click the link above to view the live version of **TaskGlitch**.
+
+---
 # Overview
 This document contains a complete breakdown of all five bug fixes implemented in the project. Each entry includes:
 - The original bug
