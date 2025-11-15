@@ -309,3 +309,108 @@ Your task table is now **stable**, **deterministic**, and **professional-grade**
 
 
 
+# FIX #4 — Double Dialog Opening Bug (Edit/Delete Triggering View Dialog)
+
+## 📌 Bug Summary
+When interacting with task rows inside the table:
+
+- Clicking **Edit** opened BOTH the **Edit Dialog** *and* the **View Details Dialog*.
+- Clicking **Delete** opened BOTH the **Delete Confirmation** *and* the **View Dialog*.
+- Clicking anywhere on the row should ONLY open the View Dialog, but action buttons were unintentionally triggering it.
+
+This caused **double dialogs**, UI confusion, and overlapping animations.
+
+---
+
+## 🧠 Root Cause
+Inside `TaskTable.tsx`, each table row had this handler:
+
+```tsx
+<TableRow
+  hover
+  onClick={() => setDetails(t)}
+  sx={{ cursor: 'pointer' }}
+>
+```
+
+However, the Edit/Delete buttons inside the row also triggered this handler because:
+
+### ❗ Event Bubbling
+Clicking the Edit/Delete button **bubbles up** to the parent `<TableRow>` which also receives the click event.
+
+So:
+
+- User clicks **Edit**
+- `IconButton` handler runs → edit modal opens
+- Event bubbles to `<TableRow>` → view modal opens
+
+---
+
+## ✅ FIX — Use `stopPropagation()` on Action Buttons
+To prevent bubbling, add:
+
+```tsx
+onClick={(e) => {
+  e.stopPropagation();
+  handleEditClick(t);
+}}
+```
+
+and for delete:
+
+```tsx
+onClick={(e) => {
+  e.stopPropagation();
+  onDelete(t.id);
+}}
+```
+
+### ✔ This guarantees:
+
+- **Edit button** → ONLY opens Edit dialog  
+- **Delete button** → ONLY opens Delete confirmation  
+- **Row click** → ONLY opens View dialog  
+
+No more double dialogs, flickers, or UI confusion.
+
+---
+
+## 🛠 Final Code Snippet (Corrected)
+
+```tsx
+<Tooltip title="Edit">
+  <IconButton
+    size="small"
+    onClick={(e) => {
+      e.stopPropagation();   // FIX here
+      handleEditClick(t);
+    }}
+  >
+    <EditIcon fontSize="small" />
+  </IconButton>
+</Tooltip>
+
+<Tooltip title="Delete">
+  <IconButton
+    size="small"
+    color="error"
+    onClick={(e) => {
+      e.stopPropagation();   // FIX here
+      onDelete(t.id);
+    }}
+  >
+    <DeleteIcon fontSize="small" />
+  </IconButton>
+</Tooltip>
+```
+
+---
+
+## 🎉 Result
+- No more double dialogs  
+- No overlapping animations  
+- Clean, predictable UX  
+- Edit/Delete buttons behave independently from row click  
+
+This completes **FIX #4**.
+

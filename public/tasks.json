@@ -399,7 +399,6 @@
     "priority": "Medium",
     "status": "Done"
   },
-  // ! bellow 2 items added for testing the unstable sorting bug fix
   {
     "id": "t-2051",
     "title": "LP-test-b1",
