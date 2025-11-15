@@ -30,12 +30,13 @@ export default function TaskTable({ tasks, onAdd, onUpdate, onDelete }: Props) {
     setOpenForm(true);
   };
 
-  const handleSubmit = (value: Omit<Task, 'id'> & { id?: string }) => {
+  const handleSubmit = (value: Partial<Omit<Task, "id">> & { id?: string }) => {
     if (value.id) {
       const { id, ...rest } = value as Task;
       onUpdate(id, rest);
     } else {
-      onAdd(value as Omit<Task, 'id'>);
+      const { id, ...rest } = value as Task;
+      onAdd(rest as Omit<Task, "id">);
     }
   };
 
@@ -85,9 +86,9 @@ export default function TaskTable({ tasks, onAdd, onUpdate, onDelete }: Props) {
                   </TableCell>
                   <TableCell align="right">${t.revenue.toLocaleString()}</TableCell>
                   <TableCell align="right">{t.timeTaken}</TableCell>
-                  <TableCell>{t.priority}</TableCell>
                   {/* * fixed to display upto 2 decimal values */}
-                  <TableCell align="right">{t.roi > 0 ? t.roi?.toFixed(2) : '-'}</TableCell>
+                  <TableCell align="right">{t.roi !== null && t.roi > 0 ? t.roi.toFixed(2) : "-"}</TableCell>
+                  <TableCell>{t.priority}</TableCell>
                   <TableCell>{t.status}</TableCell>
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
