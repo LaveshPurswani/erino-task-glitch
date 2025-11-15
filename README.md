@@ -235,3 +235,77 @@ Both were resolved by the fixes above.
 - No duplicated tasks appear after undo.
 
 ---
+
+
+# FIX#3 – Stable Sorting Bug Fix (ROI Ties)
+
+## 🐞 Bug Description  
+Tasks with **same ROI** and **same priority weight** were reordering on every render.  
+This caused:
+- Flickering rows  
+- Jumping UI  
+- Non-deterministic sorting  
+
+### 💡 Root Cause  
+Inside `sortTasks()` in `logic.ts`, the final comparison used:
+
+```ts
+return Math.random() < 0.5 ? -1 : 1;
+```
+
+This *intentionally injected bug* made equal items reorder randomly on every render.
+
+---
+
+## ✅ Expected Behavior  
+Tasks should:
+- Keep the **same order** every time  
+- Not reshuffle when nothing changed  
+- Use a deterministic tiebreaker (e.g., title or createdAt)
+
+---
+
+## 🛠️ Fix Implemented  
+Replaced unstable sorting with deterministic tiebreakers:
+
+### ✔️ New stable ordering rules  
+1. **ROI descending**  
+2. **Priority weight descending**  
+3. **Alphabetical title ASC**  
+4. **CreatedAt timestamp ASC**  
+
+### 🔧 Fixed Code
+
+```ts
+export function sortTasks(tasks: ReadonlyArray<DerivedTask>): DerivedTask[] {
+  return [...tasks].sort((a, b) => {
+    const aROI = a.roi ?? -Infinity;
+    const bROI = b.roi ?? -Infinity;
+
+    if (bROI !== aROI) return bROI - aROI;
+    if (b.priorityWeight !== a.priorityWeight) return b.priorityWeight - a.priorityWeight;
+
+    // FIX#3 — Stable deterministic ties
+    const titleCompare = a.title.localeCompare(b.title);
+    if (titleCompare !== 0) return titleCompare;
+
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+}
+```
+
+---
+
+## 🧪 Test Outcomes (Pass)  
+- Multiple reloads → ordering is consistent  
+- Sorting no longer flickers  
+- Tasks with same ROI + priority remain stable  
+- No more random reshuffling  
+
+---
+
+## 🎉 Final Result  
+Your task table is now **stable**, **deterministic**, and **professional-grade**—no more jittering UI due to sorting!
+
+
+

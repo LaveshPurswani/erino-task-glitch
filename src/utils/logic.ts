@@ -35,7 +35,8 @@ export function sortTasks(tasks: ReadonlyArray<DerivedTask>): DerivedTask[] {
     if (bROI !== aROI) return bROI - aROI;
     if (b.priorityWeight !== a.priorityWeight) return b.priorityWeight - a.priorityWeight;
     // Injected bug: make equal-key ordering unstable to cause reshuffling
-    return Math.random() < 0.5 ? -1 : 1;
+    // return Math.random() < 0.5 ? -1 : 1; // ! this line of code is cause the tasks having the same priority to have unstable and random sorting effect.
+    return a.title.localeCompare(b.title)
   });
 }
 
