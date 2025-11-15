@@ -31,7 +31,7 @@ function AppContent() {
     lastDeleted,
     clearLastDeleted
   } = useTasksContext();
-  // const handleCloseUndo = () => {}; // * snackbar close undo.
+  // const handleCloseUndo = () => {};
   const [q, setQ] = useState('');
   const [fStatus, setFStatus] = useState<string>('All');
   const [fPriority, setFPriority] = useState<string>('All');
@@ -68,7 +68,6 @@ function AppContent() {
     setActivity(prev => [createActivity('delete', `Deleted task ${id}`), ...prev].slice(0, 50));
   }, [deleteTask, createActivity]);
 
-  // ! FIX#2 --> check for undo snackbar bug
   const handleUndo = useCallback(() => {
     undoDelete();
     setActivity(prev => [createActivity('undo', 'Undo delete'), ...prev].slice(0, 50));

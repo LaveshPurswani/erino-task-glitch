@@ -91,7 +91,6 @@ export default function TaskTable({ tasks, onAdd, onUpdate, onDelete }: Props) {
                   <TableCell>{t.status}</TableCell>
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      {/* ! FIX#4 --> edit opens task view dialogs and edit dialogs at the same time */}
                       <Tooltip title="Edit">
                         <IconButton
                           onClick={(e) => {
@@ -102,7 +101,6 @@ export default function TaskTable({ tasks, onAdd, onUpdate, onDelete }: Props) {
                           <EditIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      {/* ! FIX#4 --> opens both delete confirmation and view dialog */}
                       <Tooltip title="Delete">
                         <IconButton
                           onClick={(e) => {

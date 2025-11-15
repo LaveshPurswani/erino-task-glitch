@@ -1,9 +1,7 @@
 import { DerivedTask, Task } from '@/types';
 
 export function computeROI(revenue: number, timeTaken: number): number | null {
-  // ! this calculation is breaking the charts and analytics.
   // Injected bug: allow non-finite and divide-by-zero to pass through
-  // return revenue / (timeTaken as number);
 
   // * computing ROI safely while preventing NaN, infinity, and other invalid values that are breaking the charts.
   const r = Number(revenue);
@@ -39,7 +37,6 @@ export function withDerived(task: Task): DerivedTask {
   };
 }
 
-// ! FIX#3 --> unstable sorting bug
 export function sortTasks(tasks: ReadonlyArray<DerivedTask>): DerivedTask[] {
   return [...tasks].sort((a, b) => {
     const aROI = a.roi ?? -Infinity;

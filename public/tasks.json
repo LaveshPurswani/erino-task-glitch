@@ -398,21 +398,5 @@
     "timeTaken": 8,
     "priority": "Medium",
     "status": "Done"
-  },
-  {
-    "id": "t-2051",
-    "title": "LP-test-b1",
-    "revenue": 40000,
-    "timeTaken": 12,
-    "priority": "High",
-    "status": "Todo"
-  },
-  {
-    "id": "t-2052",
-    "title": "LP-test-a2",
-    "revenue": 40000,
-    "timeTaken": 12,
-    "priority": "High",
-    "status": "Todo"
   }
 ]

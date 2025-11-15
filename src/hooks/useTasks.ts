@@ -39,8 +39,8 @@ export function useTasks(): UseTasksState {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastDeleted, setLastDeleted] = useState<Task | null>(null); // ! BUG#2 --> undo snackbar undo bug
-  const fetchedRef = useRef(false); // ! BUG#1 --> double fetch bug
+  const [lastDeleted, setLastDeleted] = useState<Task | null>(null);
+  const fetchedRef = useRef(false);
 
   function normalizeTasks(input: any[]): Task[] {
     const now = Date.now();
@@ -90,7 +90,6 @@ export function useTasks(): UseTasksState {
     );
   }
 
-  // ! BUG#1 --> double fetching tasks error.  Reason: two useEffect to fetch tasks.
   // Initial load: public JSON -> fallback generated dummy
   useEffect(() => {
     let isMounted = true;
@@ -116,7 +115,6 @@ export function useTasks(): UseTasksState {
           normalized.length > 0 ? normalized : generateSalesTasks(50);
         console.log("🚀 ~ load ~ finalData:", finalData);
 
-        // ! task added with NaN, undefined - unexpected values. This is breaking the charts and analytics pipeline.
         // Injected bug: append a few malformed rows without validation
         if (Math.random() < 0.5) {
           finalData = [
@@ -132,7 +130,7 @@ export function useTasks(): UseTasksState {
             {
               id: finalData[0]?.id ?? "dup-1",
               title: "Duplicate ID",
-              revenue: 9999999999, // ! this huge value is breaking the chart as well
+              revenue: 9999999999,
               timeTaken: -5,
               priority: "Low",
               status: "Done",
@@ -140,7 +138,7 @@ export function useTasks(): UseTasksState {
           ];
         }
 
-        //* inserting the normalization the 2nd time to filter the malformed data values injected after fetching tasks from tasks.json.
+        //* inserting a second-phase normalization to filter the malformed data values injected after fetching tasks from tasks.json.
         const cleaned = normalizeTasks(finalData);
         setTasks(cleaned);
         setError(null);
@@ -153,7 +151,6 @@ export function useTasks(): UseTasksState {
     load();
   }, []);
 
-  // ! BUG#2 -> unstable sorting bug. fix somewhere here.
   const derivedSorted = useMemo<DerivedTask[]>(() => {
     const withRoi = tasks.map(withDerived);
     return sortDerived(withRoi);
@@ -219,7 +216,6 @@ export function useTasks(): UseTasksState {
     });
   }, []);
 
-  // ! BUG#2 --> snackbar undo delete bug (unstable)
   const undoDelete = useCallback(() => {
     if (!lastDeleted) return;
     setTasks((prev) => [...prev, lastDeleted]);
